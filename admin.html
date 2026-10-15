@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Land Mapping Admin - স্মার্ট ল্যান্ড ম্যাপিং অ্যাডমিন</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts Inter & JetBrains Mono -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Custom GIS & Glassmorphism Styling -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    <!-- Leaflet GIS Map Library -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin=""/>
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+</head>
+<body class="bg-slate-950 font-sans text-slate-100 antialiased min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
+
+    <!-- Dynamic Admin Application Root -->
+    <div id="admin-app" class="min-h-screen flex flex-col">
+        <!-- Initial Loader -->
+        <div class="min-h-screen flex items-center justify-center p-8">
+            <div class="text-center space-y-4">
+                <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-xs font-bold text-slate-400 tracking-wider uppercase font-mono">Initializing Master Admin Bureau...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Leaflet GIS Map JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Core Store & Admin Logic Scripts -->
+    <script src="assets/js/store.js"></script>
+    <script src="assets/js/admin.js"></script>
+</body>
+</html>
