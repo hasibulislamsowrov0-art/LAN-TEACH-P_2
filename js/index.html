@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Land Mapping - স্মার্ট ল্যান্ড ম্যাপিং</title>
+    
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- FontAwesome 6 Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Inter & JetBrains Mono Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Leaflet GIS Map CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY=" crossorigin="" />
+    <!-- Custom GIS & Glassmorphism Styling -->
+    <link rel="stylesheet" href="assets/css/style.css">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        brand: {
+                            50: '#f0fdf4',
+                            100: '#dcfce7',
+                            500: '#22c55e',
+                            600: '#16a34a',
+                            700: '#15803d',
+                            800: '#166534',
+                            900: '#14532d',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <!-- Custom GIS Radar Animations & Glassmorphism Styling -->
+    <style>
+        @keyframes radar-sweep {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulse-ring {
+            0% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.7); }
+            70% { transform: scale(1); box-shadow: 0 0 0 14px rgba(34, 197, 94, 0); }
+            100% { transform: scale(0.95); box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+        @keyframes float-slow {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        @keyframes fade-slide-up {
+            from { opacity: 0; transform: translateY(16px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-radar { animation: radar-sweep 4s linear infinite; }
+        .animate-pulse-ring { animation: pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite; }
+        .animate-float { animation: float-slow 4s ease-in-out infinite; }
+        .animate-fade-in { animation: fade-slide-up 0.35s ease-out forwards; }
+
+        .gis-grid-bg {
+            background-size: 24px 24px;
+            background-image: 
+                linear-gradient(to right, rgba(16, 185, 129, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(16, 185, 129, 0.08) 1px, transparent 1px);
+        }
+        .gis-grid-dark {
+            background-size: 32px 32px;
+            background-image: 
+                linear-gradient(to right, rgba(52, 211, 153, 0.08) 1px, transparent 1px),
+                linear-gradient(to bottom, rgba(52, 211, 153, 0.08) 1px, transparent 1px);
+        }
+        .card-hover-effect {
+            transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+        .card-hover-effect:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 14px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.04);
+        }
+        .satellite-map-box {
+            background: radial-gradient(circle at center, #1e293b 0%, #0f172a 100%);
+            position: relative;
+            overflow: hidden;
+        }
+        #toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            pointer-events: none;
+        }
+        .toast-item {
+            pointer-events: auto;
+            min-width: 280px;
+            max-width: 380px;
+            animation: fade-slide-up 0.3s ease-out forwards;
+        }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: rgba(241, 245, 249, 0.8); }
+        ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+    </style>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800 antialiased min-h-screen flex flex-col selection:bg-emerald-500 selection:text-white">
+
+    <!-- Top Sticky Navbar -->
+    <header id="main-navbar" class="bg-white/95 backdrop-blur-md border-b border-slate-200 sticky top-0 z-40 transition-all"></header>
+
+    <!-- Main Dynamic Application Container -->
+    <div id="app" class="flex-1 flex flex-col">
+        <div class="flex-1 flex items-center justify-center p-12">
+            <div class="text-center space-y-4">
+                <div class="w-12 h-12 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto"></div>
+                <p class="text-xs font-bold text-slate-500 tracking-wider uppercase">Loading Smart Land Mapping Cadastral System...</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Global Professional Footer -->
+    <footer class="bg-slate-950 text-slate-400 border-t border-slate-800 text-xs py-10 mt-auto">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
+                <div class="space-y-3">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-lg bg-emerald-500 flex items-center justify-center text-white">
+                            <i class="fa-solid fa-earth-americas text-sm"></i>
+                        </div>
+                        <span class="font-black text-white text-base">Smart Land Mapping</span>
+                    </div>
+                    <p class="text-slate-400 text-xs leading-relaxed">
+                        National Land Mapping, Cadastral Boundary Survey & Agricultural Verification Bureau.
+                    </p>
+                    <div class="pt-2">
+                        <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-950 border border-emerald-500/30 text-emerald-400 text-[10px] font-mono">
+                            <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span> SYSTEM STATUS: ONLINE
+                        </span>
+                    </div>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Quick Navigation</h4>
+                    <ul class="space-y-2">
+                        <li><a href="index.html" class="hover:text-emerald-400 transition">Main Landowner Portal</a></li>
+                        <li><button type="button" onclick="window.switchPortalTab('dashboard')" class="hover:text-emerald-400 transition text-left">Cadastral Overview</button></li>
+                        <li><button type="button" onclick="window.switchPortalTab('lands')" class="hover:text-emerald-400 transition text-left">Registered Plots Directory</button></li>
+                        <li><button type="button" onclick="window.switchPortalTab('directory')" class="hover:text-emerald-400 transition text-left">10 Users Directory</button></li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Regulatory Authorities</h4>
+                    <ul class="space-y-2 text-slate-400">
+                        <li><i class="fa-solid fa-building-columns mr-1.5 text-slate-500"></i> Ministry of Land (Bangladesh)</li>
+                        <li><i class="fa-solid fa-shield-halved mr-1.5 text-slate-500"></i> District Police Verification Bureau</li>
+                        <li><i class="fa-solid fa-seedling mr-1.5 text-slate-500"></i> Department of Agricultural Extension</li>
+                        <li><i class="fa-solid fa-satellite mr-1.5 text-slate-500"></i> Survey of Bangladesh (Geodetic)</li>
+                    </ul>
+                </div>
+
+                <div>
+                    <h4 class="text-white font-bold text-xs uppercase tracking-wider mb-3">Cadastral Helpdesk</h4>
+                    <div class="bg-slate-900 border border-slate-800 p-3.5 rounded-xl space-y-2.5">
+                        <div class="text-[11px] text-slate-300">Need support regarding land parcel verification, boundary disputes, or GPS coordinates?</div>
+                        <div class="p-2.5 bg-slate-950/80 rounded-lg border border-slate-800 text-[11px] text-emerald-400 font-mono flex items-center gap-2">
+                            <i class="fa-solid fa-headset text-emerald-500"></i>
+                            <span>Hotline: +880 1742-244518</span>
+                        </div>
+                        <div class="text-[10px] text-slate-500 text-center font-mono">Service Hours: 9:00 AM - 6:00 PM (BST)</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="pt-8 border-t border-slate-900 flex flex-col sm:flex-row justify-between items-center gap-4 text-[11px] text-slate-400">
+                <div>
+                    &copy; 2026 Smart Land Mapping System &bull; Designed & Maintained by <span class="text-emerald-400 font-semibold">Sowrov Sheikh</span>
+                </div>
+                <div class="flex items-center gap-4">
+                    <span class="hover:text-slate-300">Geospatial Cadastral Registry Bureau</span>
+                    <span>&bull;</span>
+                    <span class="text-slate-500 font-mono"><i class="fa-solid fa-shield-check text-emerald-500/80 mr-1"></i> System Online</span>
+                </div>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Leaflet Interactive GIS Map Script -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <!-- Core Scripts (Store & Main Portal) -->
+    <script src="assets/js/store.js"></script>
+    <script src="assets/js/main.js"></script>
+
+    <!-- Unextracted ZIP & Offline Watchdog -->
+    <script>
+        setTimeout(function () {
+            if (!window.GeoTerraStore) {
+                var app = document.getElementById('app');
+                if (app) {
+                    app.innerHTML = `
+                        <div class="flex-1 min-h-[70vh] flex items-center justify-center p-6 bg-slate-900 text-slate-100">
+                            <div class="max-w-xl w-full bg-slate-950/90 border-2 border-amber-500/80 rounded-2xl p-6 sm:p-8 text-center shadow-2xl backdrop-blur">
+                                <div class="w-16 h-16 mx-auto mb-4 rounded-2xl bg-amber-500/20 border border-amber-500/40 flex items-center justify-center text-amber-400 text-3xl">
+                                    <i class="fa-solid fa-folder-open"></i>
+                                </div>
+                                <h2 class="text-xl font-black text-amber-400 mb-2">ফাইলগুলো এক্সট্র্যাক্ট (Extract) করা হয়নি!</h2>
+                                <p class="text-xs sm:text-sm text-slate-300 mb-4 leading-relaxed">
+                                    আপনি হয়তো জিপ (ZIP) ফাইলের ভেতর থেকে সরাসরি ওপেন করেছেন অথবা assets ফোল্ডারটি মিসিং রয়েছে।
+                                </p>
+                                <div class="bg-slate-900/90 border border-slate-800 rounded-xl p-4 text-left text-xs space-y-2 mb-6">
+                                    <div class="font-bold text-emerald-400 flex items-center gap-2">
+                                        <i class="fa-solid fa-circle-check"></i> সমাধান (How to Fix):
+                                    </div>
+                                    <ol class="list-decimal list-inside space-y-1 text-slate-300 text-[11px] sm:text-xs">
+                                        <li>ডাউনলোড করা <strong>ZIP ফাইলটির উপর রাইট ক্লিক</strong> করুন।</li>
+                                        <li><strong>"Extract All..."</strong> (বা আনজিপ) অপশনটিতে চাপুন।</li>
+                                        <li>এক্সট্র্যাক্ট হওয়া ফোল্ডারে ঢুকে <strong>START_WEBSITE.bat</strong> অথবা <strong>index.html</strong> ওপেন করুন।</li>
+                                    </ol>
+                                </div>
+                                <button onclick="window.location.reload()" class="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-bold text-xs shadow-lg transition">
+                                    <i class="fa-solid fa-rotate-right mr-1.5"></i> রিলোড দিন (Reload)
+                                </button>
+                            </div>
+                        </div>
+                    `;
+                }
+            }
+        }, 3000);
+    </script>
+</body>
+</html>
